@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Ping Pong</title>
+<style>
+body { margin: 0; overflow: hidden; background: #333; }
+canvas { display: block; }
+#menu {
+  position: absolute; top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(0,0,0,0.7);
+  padding: 20px; border-radius: 10px;
+  color: white; text-align: center;
+}
+#menu button { padding: 10px 20px; margin: 5px; }
+</style>
+</head>
+<body>
+<canvas id="gameCanvas"></canvas>
+<div id="menu">
+  <h1>Ping Pong</h1>
+  <button onclick="startGame(1)">Single Player</button>
+  <button onclick="startGame(2)">Two Players</button>
+  <label>Difficulty: <select id="difficulty"><option value="1">Easy</option><option value="2">Normal</option><option value="3">Hard</option></select></label>
+</div>
+<script>
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+
+let player1Y = canvas.height / 2 - 50;
+let player2Y = canvas.height / 2 - 50;
+let ballX = canvas.width / 2;
+let ballY = canvas.height / 2;
+let ballSpeedX = 5;
+let ballSpeedY = 5;
+let player1Score = 0;
+let player2Score = 0;
+let gameMode = 0; // 0: Menu, 1: Single, 2: Two Players
+let difficulty = 2;
+let animationId;
+
+function draw() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  const gradient = ctx.createLinearGradient(0, 0, canvas.width, 0);
+  gradient.addColorStop(0, "#0077b6"); // Blue
+  gradient.addColorStop(1, "#00b4d8"); // Lighter blue
+  ctx.fillStyle = gradient;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = 'white';
+  ctx.fillRect(10, player1Y, 15, 100);
+  ctx.fillRect(canvas.width - 25, player2Y, 15, 100);
+  ctx.shadowColor = 'yellow';
+  ctx.shadowBlur = 10;
+  ctx.fillStyle = 'yellow';
+  ctx.beginPath();
+  ctx.arc(ballX, ballY, 10, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.shadowBlur = 0; // Reset shadow
+  ctx.font = '30px Arial';
+  ctx.fillStyle = 'white';
+  ctx.fillText(player1Score, canvas.width / 4, 50);
+  ctx.fillText(player2Score, 3 * canvas.width / 4, 50);
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+  ctx.setLineDash([5, 15]);
+  ctx.beginPath();
+  ctx.moveTo(canvas.width / 2, 0);
+  ctx.lineTo(canvas.width / 2, canvas.height);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  if (gameMode !== 0) {
+    update();
+    animationId = requestAnimationFrame(draw);
+  }
+}
+
+function update() {
+  ballX += ballSpeedX;
+  ballY += ballSpeedY;
+
+  if (ballY + 10 > canvas.height || ballY - 10 < 0) {
+    ballSpeedY = -ballSpeedY;
+  }
+
+  if (ballX - 10 < 25 && ballY > player1Y && ballY < player1Y + 100) {
+    ballSpeedX = -ballSpeedX;
+    ballSpeedX *= 1.1; // Increase speed on hit
+    ballSpeedY *= 1.1;
+  }
+
+  if (ballX + 10 > canvas.width - 25 && ballY > player2Y && ballY < player2Y + 100) {
+    ballSpeedX = -ballSpeedX;
+    ballSpeedX *= 1.1;
+    ballSpeedY *= 1.1;
+  }
+
+  if (ballX < 0) {
+    player2Score++;
+    resetBall();
+  }
+  if (ballX > canvas.width) {
+    player1Score++;
+    resetBall();
+  }
+
+  if (gameMode === 1) {
+    let targetY = ballY - 50;
+    let difficultyFactor = difficulty * 2;
+    player2Y += (targetY - player2Y) / difficultyFactor;
+  }
+}
+
+function resetBall() {
+  ballX = canvas.width / 2;
+  ballY = canvas.height / 2;
+  ballSpeedX = -ballSpeedX;
+  ballSpeedX = Math.sign(ballSpeedX)*5;
+  ballSpeedY = (Math.random() - 0.5) * 10;
+}
+
+document.addEventListener('mousemove', (e) => {
+  if (gameMode === 1 || gameMode === 2) {
+    player1Y = e.clientY - 50;
+  }
+});
+document.addEventListener('keydown', (e) => {
+    if (gameMode === 2){
+        if (e.key == "w") player2Y -= 20;
+        if (e.key == "s") player2Y += 20;
+    }
+});
+
+function startGame(mode) {
+  gameMode = mode;
+  difficulty = document.getElementById("difficulty").value;
+  document.getElementById('menu').style.display = 'none';
+  resetBall();
+  player1Score = 0;
+  player2Score = 0;
+  draw();
+}
+
+draw();
+</script>
+</body>
+</html>
